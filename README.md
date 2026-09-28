@@ -1,19 +1,11 @@
-Ti-7Al is the α phase of titanium alloys, namely Ti-6Al-4V. When modeling such system for molecular dynamics (MD) simulations Al atoms are often placed at random. However, the ordering varies depending on factors like ageing, temperature or processes the alloy has been subjected to. In Ti-7Al, the Al atoms prefer to have Ti as their nearest neighbors rather than other Al atoms. This is called short-range order (SRO). SRO is measured using Warren Cowley parameter. Warren Cowley parameter value of zero indicates disorder, while the more negative it is the higher the degree of order. Ageing in moderate temperature increases the degree of order, so its imperative for us to know, how mechanical properties in Ti-7Al varies with varying SRO.
+# Effect of Al short-range order on the stiffness and strength of Ti-7Al and estimating the order with Bayesian inference
 
-This project addresses the following:
-1. How much does Al ordering change the stiffness and strength of Ti-7Al?
-2. How large is the uncertainty in these properties, and where does it come from?
-3. If we measure a mechanical property, can we work back to how ordered the alloy is?
+Ti-7Al is the α phase of titanium alloys such as Ti-6Al-4V. When modeling such system for molecular dynamics (MD) simulations, Al atoms are often placed at random. However, the ordering varies depending on factors like ageing, temperature or processes the alloy has been subjected to. In Ti-7Al, the Al atoms generally have Ti as their nearest neighbors rather than other Al atoms. This is called short-range order (SRO). SRO is measured using Warren Cowley parameter. Warren Cowley parameter value of zero indicates disorder, while the more negative it is the higher the degree of order. Ageing in moderate temperature increases the degree of order, so its important to know how mechanical properties in Ti-7Al varies with varying SRO.
+<br> <br>
+Same mechanical parts made from the same Ti-7Al but aged differently can have different strength. Models that assume random Al may overpredict the strength of aged material. In this project we tried to quantify much does Al ordering change the stiffness and strength of Ti-7Al. We explored the uncertainity in these properties and where they come from. 
+<br> <br>
+Another problem happens to be that SRO is very hard to measure directly. So, we attempted to make a model that will be able to infer how ordered the alloy is based on the mechanical property values of that alloy. This inverse model will be able an ordinary stiffness measurement (for example ultrasound) into an estimate of how ordered the alloy is and help us understanding its physical behavior. 
 
-Two parts made from the same Ti-7Al but aged differently can have different strength. Models that assume random Al may overpredict the strength of aged material.
-Also, SRO is very hard to measure directly. The inverse model turns an ordinary stiffness measurement (for example ultrasound) into an estimate of how ordered the alloy is and help us understanding its physical behavior. 
-
-
-Short answers:
-
-- Going from random to strongly ordered Al lowers the **yield stress by about 14%** and the **shear stiffness by 6 to 9%**, while the bulk modulus barely changes.
-- These changes are far larger than the scatter between simulations, so they are real.
-- A **Bayesian model** can estimate the degree of order from a measured shear modulus, with an error bar, if the measurement is accurate to about 1%.
 
 ---
 
@@ -35,8 +27,8 @@ Inverse UQ: estimate α₁ from a measured property
 
 α₁ describes the first shell of neighbours around each atom.
 
-- **α₁ = 0:** Al atoms are placed at random.
-- **α₁ < 0:** Al atoms avoid other Al atoms (ordering).
+- **α₁ = 0:** Disorder
+- **α₁ < 0:** Order
 Four α₁ levels were used for this study: **0, -0.04, -0.08 and -0.12**.
 
 ### Simulation setup
@@ -62,7 +54,6 @@ The 20 boxes at one level have the same α₁ but different atom positions. Thei
 <img width="2153" height="874" alt="fig1_distributions" src="https://github.com/user-attachments/assets/5c5ee2b9-b8d6-4741-835a-8a9b1bc3aeb6" />
 
 
-*Each dot is one box. Black: mean with 95% bootstrap interval.*
 
 | Level | Yield stress (GPa) | G (GPa) |
 |---|---|---|
@@ -90,7 +81,7 @@ Normality was checked with 48 Shapiro-Wilk tests: 12 properties at 4 levels. 47 
 | B | +1.0% | 1.00 |
 
 Ordering mainly lowers the **resistance to shear**. Resistance to compression (B) is almost unchanged.
-Between random and α₁ = -0.12, the means move by 12 to 27 box-to-box standard deviations (Welch t-test p < 10⁻³⁰; ANOVA across all four levels p ≈ 10⁻⁵⁰). So the shift is not scatter. A Brown-Forsythe test finds no change for E, yield, G and C₆₆ (p = 0.38 to 0.81). C₄₄ is the only exception: its scatter shrinks, and the inverse model accounts for this. So, The size of the scatter hardly changes with ordering.
+Between random and α₁ = -0.12, the means move by 12 to 27 box-to-box standard deviations (Welch t-test p < 10⁻³⁰; ANOVA across all four levels p ≈ 10⁻⁵⁰). So the shift is not scatter. A Brown-Forsythe test finds no change for E, yield, G and C₆₆ (p = 0.38 to 0.81). C₄₄ is the only exception: its scatter shrinks, and the inverse model accounts for this. So, the size of the scatter hardly changes with ordering.
 
 ### 3. Analysis of the scatter
 
@@ -177,15 +168,8 @@ Shear properties work well when measured to about 1% (possible with ultrasound).
 </p>
 
 ---
-## Answers
+## Conclusions
 
 - Going from random to strongly ordered Al lowers the **yield stress by about 14%** and the **shear stiffness by 6 to 9%**, while the bulk modulus barely changes.
 - These changes are far larger than the scatter between simulations, so they are real.
-- A **Bayesian model** can estimate the degree of order from a measured shear modulus, with an error bar, if the measurement is accurate to about 1%.
-
-## Conclusions
-
-1. Al short-range order has a clear, systematic effect on Ti-7Al. From random to strongly ordered, yield stress drops by about 14% and C₆₆ by about 9%, while the bulk modulus stays almost the same.
-2. At the polycrystal scale, Young's modulus drops by 6 to 7 GPa with ordering for both textures. Almost all of its spread (89 to 100%) comes from the single-crystal elastic constants; 5% texture uncertainty adds very little.
-3. The Bayesian inverse model estimates α₁ from a measured shear modulus. It is informative only for measurement errors of about 1% or less. Tension test E from MD simulation doesn’t help understanding the order.
-4. Ti-7Al parts with the same composition but different ageing histories differ in strength. Simulations that assume random Al may overestimate the strength of aged material.
+- A Bayesian model can estimate the degree of order from a measured shear modulus, with an error bar, if the measurement is accurate to about 1%.
