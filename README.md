@@ -141,7 +141,6 @@ The idea is to measure a property such as the shear modulus G, and let the model
 | Likelihood | Gaussian: model scatter + fit uncertainty + measurement error |
 | Result | posterior of α₁ on a fine grid, reported as a 90% interval |
 
-**Example: measured G with 1% error**
 
 | Measured G | Estimated α₁ (90% interval) | Meaning |
 |---|---|---|
