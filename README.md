@@ -173,6 +173,8 @@ Shear properties work well when measured to about 1% (possible with ultrasound).
 - These changes are far larger than the scatter between simulations, so they are real.
 - A Bayesian model can estimate the degree of order from a measured shear modulus, with an error bar, if the measurement is accurate to about 1%.
 
+
+---
 ## Declaration
 
 - Claude Anthropic was used as an assistant for code development, data analysis, figure preparation and editing of the text. All simulations, results and conclusions were checked by the author.
