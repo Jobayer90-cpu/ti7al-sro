@@ -169,6 +169,6 @@ Shear properties work well when measured to about 1% (possible with ultrasound).
 ---
 ## Conclusions
 
-- Going from random to strongly ordered Al lowers the **yield stress by about 14%** and the **shear stiffness by 6 to 9%**, while the bulk modulus barely changes.
+- Going from random to strongly ordered Al lowers the yield stress by about 14% and the shear stiffness by 6 to 9%, while the bulk modulus barely changes.
 - These changes are far larger than the scatter between simulations, so they are real.
 - A Bayesian model can estimate the degree of order from a measured shear modulus, with an error bar, if the measurement is accurate to about 1%.
