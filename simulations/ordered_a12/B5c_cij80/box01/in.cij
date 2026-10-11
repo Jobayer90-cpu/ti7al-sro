@@ -1,0 +1,148 @@
+# Ti-7Al elastic constants at 0 K: +/- strain in 6 directions, central differences
+# case: ordered_a12   box: box01
+# output: cij.txt, one line per strain direction d = 1..6 (xx yy zz yz xz xy),
+#         columns = C(1..6, d) in GPa
+
+log             log.cij
+
+variable        up equal 0.005
+variable        cfac equal 1.0e-4          # bar -> GPa
+
+shell           rm -f cij_raw.txt
+
+# ---- reference state: atoms and box relaxed at 0 K ----
+units           metal
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+read_data       relaxed.data
+change_box      all triclinic
+velocity        all set 0.0 0.0 0.0        # 0 K: no kinetic part in the pressure
+
+pair_style      meam
+pair_coeff      * * library.meam Al Ti AlTi.meam Ti Al
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+thermo          100
+thermo_style    custom step pe press pxx pyy pzz pyz pxz pxy lx ly lz
+min_style       cg
+min_modify      dmax 1.0e-2 line quadratic
+
+fix             br all box/relax aniso 0.0 vmax 0.001
+minimize        0.0 1.0e-10 5000 50000
+unfix           br
+minimize        0.0 1.0e-10 5000 50000
+
+variable        tmp equal lx
+variable        lx0 equal ${tmp}
+variable        tmp equal ly
+variable        ly0 equal ${tmp}
+variable        tmp equal lz
+variable        lz0 equal ${tmp}
+variable        tmp equal pe/atoms
+variable        pe0 equal ${tmp}
+variable        tmp equal press
+variable        p0 equal ${tmp}
+
+print           "# 0 K reference: lx ${lx0} ly ${ly0} lz ${lz0} pe/atom ${pe0} press ${p0}" file cij_raw.txt screen no
+print           "# d  C1d  C2d  C3d  C4d  C5d  C6d  (GPa)" append cij_raw.txt screen no
+
+write_restart   ref.restart
+
+# ---- loop over the 6 strain directions ----
+variable        dir loop 6
+label           loop_dir
+
+if "${dir} == 1" then "variable len0 equal ${lx0}"
+if "${dir} == 2" then "variable len0 equal ${ly0}"
+if "${dir} == 3" then "variable len0 equal ${lz0}"
+if "${dir} == 4" then "variable len0 equal ${lz0}"
+if "${dir} == 5" then "variable len0 equal ${lz0}"
+if "${dir} == 6" then "variable len0 equal ${ly0}"
+
+# negative strain
+clear
+read_restart    ref.restart
+pair_style      meam
+pair_coeff      * * library.meam Al Ti AlTi.meam Ti Al
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+thermo          100
+thermo_style    custom step pe press pxx pyy pzz pyz pxz pxy lx ly lz
+min_style       cg
+min_modify      dmax 1.0e-2 line quadratic
+
+variable        delta equal -${up}*${len0}
+if "${dir} == 1" then "change_box all x delta 0 ${delta} remap units box"
+if "${dir} == 2" then "change_box all y delta 0 ${delta} remap units box"
+if "${dir} == 3" then "change_box all z delta 0 ${delta} remap units box"
+if "${dir} == 4" then "change_box all yz delta ${delta} remap units box"
+if "${dir} == 5" then "change_box all xz delta ${delta} remap units box"
+if "${dir} == 6" then "change_box all xy delta ${delta} remap units box"
+minimize        0.0 1.0e-10 5000 50000
+
+variable        tmp equal pxx
+variable        m1 equal ${tmp}
+variable        tmp equal pyy
+variable        m2 equal ${tmp}
+variable        tmp equal pzz
+variable        m3 equal ${tmp}
+variable        tmp equal pyz
+variable        m4 equal ${tmp}
+variable        tmp equal pxz
+variable        m5 equal ${tmp}
+variable        tmp equal pxy
+variable        m6 equal ${tmp}
+
+# positive strain
+clear
+read_restart    ref.restart
+pair_style      meam
+pair_coeff      * * library.meam Al Ti AlTi.meam Ti Al
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+thermo          100
+thermo_style    custom step pe press pxx pyy pzz pyz pxz pxy lx ly lz
+min_style       cg
+min_modify      dmax 1.0e-2 line quadratic
+
+variable        delta equal ${up}*${len0}
+if "${dir} == 1" then "change_box all x delta 0 ${delta} remap units box"
+if "${dir} == 2" then "change_box all y delta 0 ${delta} remap units box"
+if "${dir} == 3" then "change_box all z delta 0 ${delta} remap units box"
+if "${dir} == 4" then "change_box all yz delta ${delta} remap units box"
+if "${dir} == 5" then "change_box all xz delta ${delta} remap units box"
+if "${dir} == 6" then "change_box all xy delta ${delta} remap units box"
+minimize        0.0 1.0e-10 5000 50000
+
+variable        tmp equal pxx
+variable        q1 equal ${tmp}
+variable        tmp equal pyy
+variable        q2 equal ${tmp}
+variable        tmp equal pzz
+variable        q3 equal ${tmp}
+variable        tmp equal pyz
+variable        q4 equal ${tmp}
+variable        tmp equal pxz
+variable        q5 equal ${tmp}
+variable        tmp equal pxy
+variable        q6 equal ${tmp}
+
+# stress = -pressure, so C(i,d) = -(p_i(+) - p_i(-)) / (2 * up)
+variable        c1 equal -(${q1}-${m1})/(2*${up})*${cfac}
+variable        c2 equal -(${q2}-${m2})/(2*${up})*${cfac}
+variable        c3 equal -(${q3}-${m3})/(2*${up})*${cfac}
+variable        c4 equal -(${q4}-${m4})/(2*${up})*${cfac}
+variable        c5 equal -(${q5}-${m5})/(2*${up})*${cfac}
+variable        c6 equal -(${q6}-${m6})/(2*${up})*${cfac}
+
+print           "${dir} $(v_c1:%.3f) $(v_c2:%.3f) $(v_c3:%.3f) $(v_c4:%.3f) $(v_c5:%.3f) $(v_c6:%.3f)" append cij_raw.txt screen no
+
+next            dir
+jump            SELF loop_dir
+
+shell           mv cij_raw.txt cij.txt
+shell           rm -f ref.restart
+print           "CIJ DONE"

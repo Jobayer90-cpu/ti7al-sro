@@ -1,0 +1,57 @@
+# Ti-7Al relaxation: minimize -> NVT 5 ps -> NPT 50 ps (300 K, 0 bar)
+# case: ordered_a12   box: box01
+
+log             log.relax
+
+units           metal
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+read_data       box.data
+
+pair_style      meam
+pair_coeff      * * library.meam Al Ti AlTi.meam Ti Al
+
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+timestep        0.001
+
+variable        natoms equal atoms
+variable        pea equal pe/v_natoms
+variable        T equal temp
+variable        P equal press
+variable        Lx equal lx
+variable        Ly equal ly
+variable        Lz equal lz
+
+thermo          500
+thermo_style    custom step temp press pe v_pea lx ly lz vol
+
+# ---- energy minimization ----
+min_style       cg
+minimize        1.0e-8 1.0e-10 10000 100000
+
+# ---- NVT, 5 ps ----
+reset_timestep  0
+velocity        all create 300.0 56001 dist gaussian mom yes rot yes
+fix             nvt1 all nvt temp 300.0 300.0 0.1
+run             5000
+unfix           nvt1
+
+# ---- NPT, 50 ps (a and c relax independently) ----
+reset_timestep  0
+fix             npt1 all npt temp 300.0 300.0 0.1 aniso 0.0 0.0 1.0
+
+# averages over the last 20 ps
+fix             avg all ave/time 10 2000 50000 v_T v_P v_Lx v_Ly v_Lz v_pea file relax_avg.txt
+
+run             50000
+unfix           npt1
+unfix           avg
+
+write_data      relaxed.data
+write_restart   relaxed.restart
+
+print           "RELAX DONE"

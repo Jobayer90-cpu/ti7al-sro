@@ -1,0 +1,67 @@
+# Ti-7Al uniaxial tension along x = [2-1-10] at 300 K, y and z stress-free
+# case: ordered_a12   box: box01   strain rate: 5e+10 /s
+# output: stress_strain.txt (strain, stresses in GPa, lateral strains, PE/atom, T)
+
+log             log.tension
+
+units           metal
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+read_data       relaxed.data
+
+pair_style      meam
+pair_coeff      * * library.meam Al Ti AlTi.meam Ti Al
+neighbor        1.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+timestep        0.001
+
+thermo          1000
+thermo_style    custom step temp press pxx pyy pzz pe lx ly lz
+
+# ---- short re-equilibration, 2 ps ----
+fix             eq all npt temp 300.0 300.0 0.1 aniso 0.0 0.0 1.0
+run             2000
+unfix           eq
+
+# ---- tension ----
+reset_timestep  0
+
+variable        tmp equal lx
+variable        Lx0 equal ${tmp}
+variable        tmp equal ly
+variable        Ly0 equal ${tmp}
+variable        tmp equal lz
+variable        Lz0 equal ${tmp}
+
+variable        strain equal (lx-v_Lx0)/v_Lx0
+variable        eyy equal (ly-v_Ly0)/v_Ly0
+variable        ezz equal (lz-v_Lz0)/v_Lz0
+variable        sxx equal -pxx/10000
+variable        syy equal -pyy/10000
+variable        szz equal -pzz/10000
+variable        natoms equal atoms
+variable        pea equal pe/v_natoms
+variable        T equal temp
+
+fix             1 all npt temp 300.0 300.0 0.1 y 0.0 0.0 1.0 z 0.0 0.0 1.0
+fix             2 all deform 1 x erate 0.05 units box remap x
+
+# averages over 10 steps
+fix             ss all ave/time 10 1 10 v_strain v_sxx v_syy v_szz v_eyy v_ezz v_pea v_T &
+                file stress_strain.txt title2 "# step strain sxx(GPa) syy(GPa) szz(GPa) eyy ezz pe/atom(eV) T(K)"
+
+# snapshots for OVITO (uncomment if needed)
+# dump          snap all custom 200 dump.tension.* id type x y z
+# dump_modify   snap sort id
+
+run             3000
+
+unfix           ss
+unfix           2
+unfix           1
+
+write_data      final.data
+print           "TENSION DONE"
