@@ -253,7 +253,7 @@ _Figure 7_: (left) Strain rate: the ordered alloy is weaker at every rate tested
 
 - Going from random to strongly ordered Al lowers the yield stress by about 14% and the shear stiffness by 6 to 9%, while the bulk modulus barely changes.
 - These changes are far larger than the scatter between simulations, so they come from ordering and not from noise.
-- Young's modulus from MD tension tests is dominated by thermal noise; elastic constants are the better input for uncertainty analysis.
+- Young's modulus from MD tension tests is dominated by thermal noise. Elastic constants are the better input for uncertainty analysis.
 - At the polycrystal scale, almost all of the uncertainty comes from the single-crystal properties rather than the texture.
 - A Bayesian model can estimate the degree of order from a measured shear modulus, with an error bar, if the measurement is accurate to about 1%.
 
@@ -303,7 +303,7 @@ If you use this code or data, please cite:
 }
 ```
 
-## Declaration
+## Note
 
 - Claude (Anthropic) was used as an assistant for code development, data analysis, figure preparation and editing of the text. All simulations, results and conclusions were checked by the author.
 - This project is ongoing.
