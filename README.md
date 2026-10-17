@@ -9,7 +9,7 @@
 [![NumPy](https://img.shields.io/badge/NumPy-SciPy-orange)](https://scipy.org)
 [![Matplotlib](https://img.shields.io/badge/Matplotlib-figures-yellow)](https://matplotlib.org)
 [![OVITO](https://img.shields.io/badge/OVITO-visualization-purple)](https://www.ovito.org)
-[![Status](https://img.shields.io/badge/status-ongoing-lightgrey)](#declaration)
+[![Status](https://img.shields.io/badge/status-ongoing-lightgrey)](#note)
 
 </div>
 
@@ -28,7 +28,7 @@
 - [Contact Information](#contact-information)
 - [References](#references)
 - [Citation](#citation)
-- [Declaration](#declaration)
+- [Note](#note)
 
 ## Project Overview
 
@@ -157,6 +157,12 @@ _Figure 2_: All 80 boxes against α₁, with a straight-line fit.
 - Between random and α₁ = -0.12, the means move by 12 to 27 box-to-box standard deviations (Welch t-test p < 10⁻³⁰; ANOVA across all four levels p ≈ 10⁻⁵⁰), so the shift is not scatter.
 - The size of the scatter hardly changes with ordering. A Brown–Forsythe test finds no change for E, yield, G and C₆₆ (p = 0.38 to 0.81). C₄₄ is the only exception: its scatter shrinks, and the inverse model accounts for this.
 
+> **In plain terms**
+> - **Yield stress** is how hard you must pull before the metal deforms permanently. It drops by about 14% from random to strongly ordered.
+> - **Shear stiffness** (G, C₄₄, C₆₆) is the resistance to being twisted or slid sideways. It drops by 6 to 9%.
+> - **Bulk modulus** (B) is the resistance to being squeezed from all sides. It barely changes.
+> - Boxes at the same ordering level still differ a little. That spread is the *scatter*. The jump between levels is 12 to 27 times larger than the scatter, so it comes from ordering, not from chance.
+
 ### 3. Where the scatter comes from
 
 <img width="100%" alt="fig3_noise_vs_arrangement" src="https://github.com/user-attachments/assets/d38aeea6-5110-4fd2-a88c-798d454696cf" />
@@ -171,6 +177,18 @@ _Figure 3_: The same boxes measured two ways: Young's modulus from the tension t
 | α₁ = -0.12 | 3.10 | 0.45 | 98% |
 
 The two measurements do not correlate from box to box (r ≈ 0), so the tension-test scatter is dominated by **thermal noise** from MD, not by where the atoms sit. For the UQ steps, stiffness was therefore taken from the **elastic constants**, which are about 7 times less scattered.
+
+> **In plain terms: how the noise was measured**
+>
+> Young's modulus was obtained from the same 20 boxes in two ways:
+> - **Tension test at 300 K:** the atoms vibrate, so the stress reading jitters. Box-to-box spread: 2.21 GPa.
+> - **Elastic constants at 0 K:** no vibration, so almost no jitter. Spread: 0.40 GPa, which comes only from where the Al atoms sit.
+>
+> The tension test sees both effects. Removing the part caused by atom positions leaves the jitter (spreads add by their squares):
+>
+> noise² = 2.21² − 0.40², so noise ≈ 2.17 GPa, which is **97%** of the tension-test variance.
+>
+> The tension test mostly measures vibration noise, so the elastic constants were used instead.
 
 ### 4. From single crystal to polycrystal
 
@@ -195,6 +213,91 @@ A real part is a polycrystal made of many grains with different orientations (te
 - Ordering lowers polycrystal E by **6 to 7 GPa** for both textures, about 20 standard deviations.
 - Almost all of the spread (89 to 100%) comes from the single-crystal elastic constants. A 5% texture uncertainty adds very little.
 - A simple formula that ignores the sum-to-one rule for the texture weights overestimates the SD by 2 to 4 times.
+
+> **In plain terms: how a polycrystal value is obtained from a single crystal**
+>
+> No polycrystal was simulated. A titanium crystal is stiffer in some directions than in others: about 157 GPa when pulled along its c-axis and about 120 GPa when pulled in the basal plane. A real part contains millions of grains pointing in different directions, so:
+> 1. the crystal's stiffness is computed for 50 grain directions;
+> 2. these values are averaged, each weighted by how common that direction is (the texture);
+> 3. to get the uncertainty, this calculation is repeated many times (Monte Carlo). Each time the elastic constants get a small random change matching the box-to-box scatter, and the texture weights get 5% random noise.
+>
+> The average of all repeats is the expected modulus, and their spread is its uncertainty.
+
+<details>
+<summary><b>Minimal example code (pure Python, runs in any online compiler)</b></summary>
+
+```python
+import math
+import random
+
+# ---------------------------------------------------------------
+# 1. Single-crystal elastic constants from MD (GPa), random Al
+#    mean and box-to-box SD of the 20 boxes
+# ---------------------------------------------------------------
+mean = {"C11": 177.74, "C12": 93.57, "C13": 79.39, "C33": 203.88, "C44": 40.51}
+sd   = {"C11": 0.16,   "C12": 0.20,  "C13": 0.15,  "C33": 0.12,   "C44": 0.16}
+
+
+def E_direction(C, theta):
+    """Young's modulus of a hexagonal crystal pulled at angle theta
+    from its c-axis (0 = along c, 90 deg = in the basal plane)."""
+    C11, C12, C13, C33, C44 = C["C11"], C["C12"], C["C13"], C["C33"], C["C44"]
+    D = C33 * (C11 + C12) - 2 * C13 ** 2
+    S11 = (C11 * C33 - C13 ** 2) / ((C11 - C12) * D)
+    S13 = -C13 / D
+    S33 = (C11 + C12) / D
+    S44 = 1 / C44
+    s, c = math.sin(theta), math.cos(theta)
+    return 1 / (S11 * s**4 + S33 * c**4 + (2 * S13 + S44) * s**2 * c**2)
+
+
+# ---------------------------------------------------------------
+# 2. Texture: 50 grain orientations and how common each one is
+#    random texture -> every orientation equally likely
+# ---------------------------------------------------------------
+N = 50
+angles = [math.acos(1 - (i + 0.5) / N) for i in range(N)]   # spread evenly
+weights = [1 / N] * N                                       # sum = 1
+
+
+def polycrystal_E(C, w):
+    """weighted average of E over all grain orientations"""
+    return sum(wi * E_direction(C, a) for wi, a in zip(w, angles))
+
+
+print("Single crystal, along c-axis    :", round(E_direction(mean, 0), 1), "GPa")
+print("Single crystal, in basal plane  :", round(E_direction(mean, math.pi / 2), 1), "GPa")
+print("Polycrystal (one calculation)   :", round(polycrystal_E(mean, weights), 2), "GPa")
+
+# ---------------------------------------------------------------
+# 3. Monte Carlo: repeat with uncertain inputs
+# ---------------------------------------------------------------
+random.seed(1)
+results = []
+for run in range(20000):
+    C = {k: random.gauss(mean[k], sd[k]) for k in mean}            # crystal scatter
+    w = [wi * (1 + random.gauss(0, 0.05)) for wi in weights]       # 5 % texture noise
+    total = sum(w)
+    w = [wi / total for wi in w]                                   # weights sum to 1
+    results.append(polycrystal_E(C, w))
+
+m = sum(results) / len(results)
+s = math.sqrt(sum((r - m) ** 2 for r in results) / (len(results) - 1))
+print("Polycrystal, Monte Carlo        :", round(m, 2), "+/-", round(s, 2), "GPa")
+```
+
+Output:
+
+```
+Single crystal, along c-axis    : 157.4 GPa
+Single crystal, in basal plane  : 120.1 GPa
+Polycrystal (one calculation)   : 118.16 GPa
+Polycrystal, Monte Carlo        : 118.16 +/- 0.23 GPa
+```
+
+This simplified version varies each elastic constant independently. The full analysis in `python/7_analyze/analyze.py` also uses the correlations between them, which gives a slightly larger spread (± 0.34 GPa).
+
+</details>
 
 ### 5. Inverse model: how ordered is the alloy?
 
@@ -234,6 +337,22 @@ The idea is to measure a property such as the shear modulus G and let the model 
 - Shear properties work well when measured to about 1%, which is possible with ultrasound. Combining G, C₄₄ and C₆₆ halves the interval.
 - B changes too little and tension E is too noisy to be useful.
 - In leave-one-box-out tests, the 90% interval contained the true α₁ in 85 to 90% of cases.
+
+> **In plain terms: why the measurement must be accurate to about 1%**
+>
+> "Accurate to 1%" means the measured value is off by at most about 1%. For G ≈ 44 GPa that is about ±0.45 GPa. The whole effect of ordering on G is only about 6% (44.6 → 42.0 GPa), so the measurement error has to be clearly smaller than that window.
+>
+> | Error in G | ± in G | 90% interval for α₁ | What you learn |
+> |---|---|---|---|
+> | 0% | 0 | 0.016 | almost the exact α₁ |
+> | 0.5% | ±0.22 GPa | 0.038 | very useful |
+> | **1%** | **±0.45 GPa** | **0.073** | **random vs. partly vs. strongly ordered** |
+> | 2% | ±0.9 GPa | 0.109 | only a rough hint |
+> | 5% | ±2.2 GPa | ≈0.13 | nothing; the error is as big as the whole effect |
+>
+> 1% is not a fixed rule. It is roughly the largest error that still gives a useful answer. Ultrasonic methods (for example resonant ultrasound spectroscopy) can reach it; a normal tensile test cannot.
+>
+> **"Prior only"** in Figure 5(c) is what is known before any measurement: α₁ could be anywhere between -0.134 (fully ordered) and +0.01 (random), so the 90% range is about 0.13 wide. A measurement whose interval is as wide as this line teaches nothing. The further a curve lies below it, the more useful that measurement is.
 
 ### 6. Checks
 
