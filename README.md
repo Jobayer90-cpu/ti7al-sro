@@ -14,7 +14,7 @@
 </div>
 
 <p align="center">
-  <img src="results/figures_clean/graphical_abstract.png" alt="Graphical abstract" width="100%">
+   <img src="figures/graphical_abstract.png" alt="Graphical abstract" width="100%">
 </p>
 
 ## Table of Contents
@@ -59,25 +59,9 @@ Requirements:
 
 ## Workflow
 
-```mermaid
-flowchart LR
-    A["<b>1. Build structures</b><br/>4 ordering levels (α₁)<br/>20 boxes each<br/>swap Monte Carlo"]
-    B["<b>2. MD simulations</b><br/>LAMMPS, 2NN MEAM<br/>relaxation<br/>elastic constants<br/>tensile test"]
-    C["<b>3. Statistics</b><br/>distributions<br/>trends with α₁<br/>mean and spread tests<br/>noise analysis"]
-    D["<b>4. Forward UQ</b><br/>single crystal → polycrystal<br/>Monte Carlo"]
-    E["<b>5. Inverse UQ</b><br/>measured G → α₁<br/>Bayesian inference"]
-    A --> B --> C
-    C --> D
-    C --> E
-    classDef build fill:#dbe9f8,stroke:#1f5aa6,color:#0b2f66
-    classDef md fill:#b9d4f1,stroke:#1f5aa6,color:#0b2f66
-    classDef stats fill:#8fb8e6,stroke:#1f5aa6,color:#0b2f66
-    classDef uq fill:#1f5aa6,stroke:#0b2f66,color:#ffffff
-    class A build
-    class B md
-    class C stats
-    class D,E uq
-```
+<p align="center">
+  <img width="100%" alt="Workflow" src="workflow.png" />
+</p>
 
 ## Simulation Setup
 
