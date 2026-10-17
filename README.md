@@ -13,9 +13,6 @@
 
 </div>
 
-<p align="center">
-   <img src="figures/graphical_abstract.png" alt="Graphical abstract" width="100%">
-</p>
 
 ## Table of Contents
 
